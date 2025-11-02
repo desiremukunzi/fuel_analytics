@@ -1,0 +1,60 @@
+# 🚀 COMPLETE DEPLOYMENT GUIDE - LOCAL → GITHUB → UBUNTU SERVER
+
+## Part 1: Preparing Your Code for GitHub
+
+### Step 1: Clean Up Before Pushing
+
+**Files/Folders to EXCLUDE from GitHub:**
+
+Create `.gitignore` file in your project root:
+
+```gitignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# ML Models (Too large for GitHub)
+ml_models/
+*.pkl
+*.joblib
+
+# Database credentials (SECURITY!)
+db_config.py
+
+# Outputs
+outputs/
+uploads/
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+*.backup*
+*.bak
+
+# Node modules (if any)
+node_modules/
+package-lock.json
+
+# Build files
+dist/
+build/
+*.egg-info/

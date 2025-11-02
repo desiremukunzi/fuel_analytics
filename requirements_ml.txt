@@ -1,0 +1,15 @@
+# ML-Enhanced Jalikoi Analytics Requirements
+# Install with: pip install -r requirements_ml.txt --break-system-packages
+
+# Core ML Libraries
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Existing requirements
+fastapi>=0.104.0
+uvicorn>=0.24.0
+python-multipart>=0.0.6
+mysql-connector-python>=8.0.33
+matplotlib>=3.7.0
+seaborn>=0.12.0

@@ -1,0 +1,416 @@
+{
+  "info": {
+    "name": "Jalikoi Analytics API",
+    "description": "REST API for Jalikoi customer analytics and insights",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Check if API is running and database is available"
+          }
+        },
+        {
+          "name": "API Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Get API information and available endpoints"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Insights - Default & Pre-defined Periods",
+      "item": [
+        {
+          "name": "Yesterday's Insights (Default)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"]
+            },
+            "description": "Get insights for yesterday (default behavior)"
+          }
+        },
+        {
+          "name": "Last Week Insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?period=week",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "week"
+                }
+              ]
+            },
+            "description": "Get insights for the last 7 days"
+          }
+        },
+        {
+          "name": "Last Month Insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?period=month",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "month"
+                }
+              ]
+            },
+            "description": "Get insights for the last 30 days"
+          }
+        },
+        {
+          "name": "All Historical Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?period=all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "all"
+                }
+              ]
+            },
+            "description": "Get insights for all data since the beginning"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Insights - Custom Date Ranges",
+      "item": [
+        {
+          "name": "Custom Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?start_date=2025-10-01&end_date=2025-10-27",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-10-01",
+                  "description": "Start date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-10-27",
+                  "description": "End date in YYYY-MM-DD format"
+                }
+              ]
+            },
+            "description": "Get insights for a custom date range"
+          }
+        },
+        {
+          "name": "October 2025 Insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?start_date=2025-10-01&end_date=2025-10-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-10-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-10-31"
+                }
+              ]
+            },
+            "description": "Get insights for October 2025"
+          }
+        },
+        {
+          "name": "Specific Week (Oct 21-27)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?start_date=2025-10-21&end_date=2025-10-27",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-10-21"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-10-27"
+                }
+              ]
+            },
+            "description": "Get insights for week of Oct 21-27, 2025"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Insights - With Comparisons",
+      "item": [
+        {
+          "name": "Last Week with Comparison",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?period=week&compare=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "week"
+                },
+                {
+                  "key": "compare",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get last week's insights compared to the previous week"
+          }
+        },
+        {
+          "name": "Last Month with Comparison",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?period=month&compare=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "month"
+                },
+                {
+                  "key": "compare",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get last month's insights compared to the previous month"
+          }
+        },
+        {
+          "name": "Custom Range with Comparison",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?start_date=2025-10-21&end_date=2025-10-27&compare=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-10-21"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-10-27"
+                },
+                {
+                  "key": "compare",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get custom date range with comparison to previous period"
+          }
+        },
+        {
+          "name": "Yesterday with Comparison",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/insights?compare=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "insights"],
+              "query": [
+                {
+                  "key": "compare",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get yesterday's insights compared to day before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Visualizations",
+      "item": [
+        {
+          "name": "All Charts - Yesterday",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/visualizations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "visualizations"]
+            },
+            "description": "Get all chart data for yesterday"
+          }
+        },
+        {
+          "name": "All Charts - Custom Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/visualizations?start_date=2025-10-27&end_date=2025-10-27",
+              "host": ["{{base_url}}"],
+              "path": ["api", "visualizations"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-10-27"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-10-27"
+                }
+              ]
+            },
+            "description": "Get all chart data for specific date"
+          }
+        },
+        {
+          "name": "Revenue Charts Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/visualizations?chart_type=revenue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "visualizations"],
+              "query": [
+                {
+                  "key": "chart_type",
+                  "value": "revenue"
+                }
+              ]
+            },
+            "description": "Get only revenue-related chart data"
+          }
+        },
+        {
+          "name": "Segmentation Charts Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/visualizations?chart_type=segmentation",
+              "host": ["{{base_url}}"],
+              "path": ["api", "visualizations"],
+              "query": [
+                {
+                  "key": "chart_type",
+                  "value": "segmentation"
+                }
+              ]
+            },
+            "description": "Get only customer segmentation chart data"
+          }
+        },
+        {
+          "name": "Churn Charts Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/visualizations?chart_type=churn",
+              "host": ["{{base_url}}"],
+              "path": ["api", "visualizations"],
+              "query": [
+                {
+                  "key": "chart_type",
+                  "value": "churn"
+                }
+              ]
+            },
+            "description": "Get only churn risk chart data"
+          }
+        },
+        {
+          "name": "All Charts - Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/visualizations?start_date=2025-10-01&end_date=2025-10-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "visualizations"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-10-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-10-31"
+                }
+              ]
+            },
+            "description": "Get all chart data for date range"
+          }
+        }
+      ]
+    }
+  ]
+}

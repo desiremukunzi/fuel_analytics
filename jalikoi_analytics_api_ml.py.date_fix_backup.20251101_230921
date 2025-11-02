@@ -1,0 +1,476 @@
+#!/usr/bin/env python3
+"""
+Jalikoi Analytics REST API with ML Enhancements
+================================================
+Enhanced FastAPI endpoint with Machine Learning capabilities
+
+New ML Endpoints:
+- GET /api/ml/churn-predictions - Get ML churn predictions
+- GET /api/ml/revenue-forecast - Get ML revenue forecasts  
+- GET /api/ml/segments - Get ML-based customer segments
+- GET /api/ml/anomalies - Detect anomalous transactions
+- GET /api/ml/model-info - Get ML model information
+- POST /api/ml/train - Trigger model training (admin only)
+
+Run with: python jalikoi_analytics_api_ml.py
+"""
+
+import sys
+import os
+
+# Add imports for ML
+try:
+    from ml_engine import MLEngine
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    print("⚠ ML Engine not available. Install scikit-learn to enable ML features.")
+
+# Import working metrics calculator
+from train_ml_models import calculate_customer_metrics as calc_customer_metrics
+
+# Import everything from the original API
+from jalikoi_analytics_api import *
+
+# Initialize ML Engine
+if ML_AVAILABLE:
+    ml_engine = MLEngine(model_dir="ml_models")
+    print("✓ ML Engine initialized")
+else:
+    ml_engine = None
+
+
+# ============================================================================
+# ML ENDPOINTS
+# ============================================================================
+
+@app.get("/api/ml/model-info")
+async def get_ml_model_info():
+    """Get information about trained ML models"""
+    if not ML_AVAILABLE:
+        raise HTTPException(status_code=503, detail="ML features not available")
+    
+    return {
+        "success": True,
+        "ml_available": ML_AVAILABLE,
+        "models": ml_engine.get_model_info() if ml_engine else {}
+    }
+
+
+@app.get("/api/ml/churn-predictions")
+async def get_churn_predictions(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    min_probability: float = Query(0.0, description="Minimum churn probability (0-1)"),
+    limit: int = Query(100, description="Maximum number of results")
+):
+    """
+    Get ML-powered churn predictions for customers
+    
+    Returns customers with churn probability scores
+    """
+    if not ML_AVAILABLE or ml_engine.churn_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Churn prediction model not available. Train models first."
+        )
+    
+    try:
+        # Determine date range
+        today = datetime.now().date()
+        if not start_date or not end_date:
+            start_date = str(today - timedelta(days=30))
+            end_date = str(today)
+        
+        # Fetch data
+        df = engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="No data found")
+        
+        # Preprocess and calculate metrics
+        df = engine.preprocess_data(df)
+        customer_metrics = calc_customer_metrics(df)
+        
+        # Get ML predictions
+        predictions = ml_engine.predict_churn(customer_metrics)
+        
+        # Filter by minimum probability
+        predictions = predictions[predictions['churn_probability'] >= min_probability]
+        
+        # Sort by probability and limit
+        predictions = predictions.sort_values('churn_probability', ascending=False).head(limit)
+        
+        # Merge with customer data
+        result_data = predictions.merge(
+            customer_metrics[['motorcyclist_id', 'total_spent', 'transaction_count', 'recency_days']],
+            on='motorcyclist_id'
+        )
+        
+        # Convert to dict
+        customers_at_risk = []
+        for _, row in result_data.iterrows():
+            customers_at_risk.append({
+                'customer_id': int(row['motorcyclist_id']),
+                'churn_probability': float(row['churn_probability']),
+                'risk_level': str(row['risk_level']),
+                'total_spent': float(row['total_spent']),
+                'transactions': int(row['transaction_count']),
+                'recency_days': float(row['recency_days']),
+                'prediction': 'Will Churn' if row['churn_prediction'] == 1 else 'Will Retain'
+            })
+        
+        return {
+            "success": True,
+            "model_type": "RandomForestClassifier",
+            "model_accuracy": ml_engine.metadata.get('churn_accuracy'),
+            "total_customers_analyzed": len(customer_metrics),
+            "high_risk_count": len(predictions[predictions['risk_level'] == 'High Risk']),
+            "customers_at_risk": customers_at_risk
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.get("/api/ml/revenue-forecast")
+async def get_revenue_forecast(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    months: int = Query(6, description="Forecast period in months"),
+    top_n: int = Query(50, description="Top N customers by forecasted revenue")
+):
+    """
+    Get ML-powered revenue forecasts for customers
+    
+    Returns predicted future revenue for each customer
+    """
+    if not ML_AVAILABLE or ml_engine.revenue_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Revenue forecast model not available. Train models first."
+        )
+    
+    try:
+        # Determine date range
+        today = datetime.now().date()
+        if not start_date or not end_date:
+            start_date = str(today - timedelta(days=30))
+            end_date = str(today)
+        
+        # Fetch data
+        df = engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="No data found")
+        
+        # Preprocess and calculate metrics
+        df = engine.preprocess_data(df)
+        customer_metrics = calc_customer_metrics(df)
+        
+        # Get ML predictions
+        predictions = ml_engine.predict_revenue(customer_metrics, months=months)
+        
+        # Merge with customer data
+        result_data = predictions.merge(
+            customer_metrics[['motorcyclist_id', 'total_spent', 'transaction_count']],
+            on='motorcyclist_id'
+        )
+        
+        # Sort and limit
+        result_data = result_data.sort_values('predicted_revenue', ascending=False).head(top_n)
+        
+        # Convert to dict
+        forecasts = []
+        total_forecast = 0
+        for _, row in result_data.iterrows():
+            forecast_value = float(row['predicted_revenue'])
+            total_forecast += forecast_value
+            
+            forecasts.append({
+                'customer_id': int(row['motorcyclist_id']),
+                'predicted_revenue': forecast_value,
+                'historical_revenue': float(row['total_spent']),
+                'transactions': int(row['transaction_count']),
+                'confidence': str(row['confidence']),
+                'forecast_period_months': months
+            })
+        
+        return {
+            "success": True,
+            "model_type": "GradientBoostingRegressor",
+            "model_mae": ml_engine.metadata.get('revenue_mae'),
+            "forecast_period_months": months,
+            "total_customers_analyzed": len(customer_metrics),
+            "total_forecasted_revenue": round(total_forecast, 2),
+            "top_customers_forecast": forecasts
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.get("/api/ml/segments")
+async def get_ml_segments(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)")
+):
+    """
+    Get ML-based customer segmentation
+    
+    Returns data-driven customer segments discovered by K-Means clustering
+    """
+    if not ML_AVAILABLE or ml_engine.segmentation_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Segmentation model not available. Train models first."
+        )
+    
+    try:
+        # Determine date range
+        today = datetime.now().date()
+        if not start_date or not end_date:
+            start_date = str(today - timedelta(days=30))
+            end_date = str(today)
+        
+        # Fetch data
+        df = engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="No data found")
+        
+        # Preprocess and calculate metrics
+        df = engine.preprocess_data(df)
+        customer_metrics = calc_customer_metrics(df)
+        
+        # Get ML predictions
+        predictions = ml_engine.predict_segments(customer_metrics)
+        
+        # Merge with customer data
+        result_data = predictions.merge(
+            customer_metrics[['motorcyclist_id', 'total_spent', 'transaction_count', 'recency_days', 'frequency']],
+            on='motorcyclist_id'
+        )
+        
+        # Calculate segment statistics
+        segment_stats = result_data.groupby('segment_name').agg({
+            'motorcyclist_id': 'count',
+            'total_spent': ['sum', 'mean'],
+            'transaction_count': 'mean',
+            'recency_days': 'mean',
+            'frequency': 'mean'
+        }).reset_index()
+        
+        segment_stats.columns = [
+            'segment_name', 'customer_count', 'total_revenue', 'avg_revenue',
+            'avg_transactions', 'avg_recency', 'avg_frequency'
+        ]
+        
+        segments_summary = []
+        for _, row in segment_stats.iterrows():
+            segments_summary.append({
+                'segment_name': str(row['segment_name']),
+                'customer_count': int(row['customer_count']),
+                'total_revenue': float(row['total_revenue']),
+                'avg_revenue_per_customer': float(row['avg_revenue']),
+                'avg_transactions': float(row['avg_transactions']),
+                'avg_recency_days': float(row['avg_recency']),
+                'avg_frequency': float(row['avg_frequency'])
+            })
+        
+        return {
+            "success": True,
+            "model_type": "KMeans",
+            "n_clusters": 8,
+            "total_customers_analyzed": len(customer_metrics),
+            "segments": segments_summary
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.get("/api/ml/anomalies")
+async def detect_anomalies(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    limit: int = Query(100, description="Maximum number of anomalies to return")
+):
+    """
+    Detect anomalous transactions using ML
+    
+    Returns suspicious transactions that deviate from normal patterns
+    """
+    if not ML_AVAILABLE or ml_engine.anomaly_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Anomaly detection model not available. Train models first."
+        )
+    
+    try:
+        # Determine date range
+        today = datetime.now().date()
+        if not start_date or not end_date:
+            yesterday = today - timedelta(days=1)
+            start_date = str(yesterday)
+            end_date = str(yesterday)
+        
+        # Fetch data
+        df = engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="No data found")
+        
+        # Preprocess
+        df = engine.preprocess_data(df)
+        
+        # Detect anomalies
+        predictions = ml_engine.detect_anomalies(df)
+        
+        # Merge with transaction data
+        result_data = df.merge(predictions, on='id')
+        
+        # Filter anomalies
+        anomalies = result_data[result_data['is_anomaly'] == True].copy()
+        
+        # Sort by anomaly score and limit
+        anomalies = anomalies.sort_values('anomaly_score').head(limit)
+        
+        # Convert to dict
+        anomaly_list = []
+        for _, row in anomalies.iterrows():
+            anomaly_list.append({
+                'transaction_id': int(row['id']),
+                'customer_id': int(row['motorcyclist_id']),
+                'amount': float(row['amount']),
+                'liters': float(row['liter']),
+                'station_id': int(row['station_id']),
+                'timestamp': str(row['created_at']),
+                'anomaly_score': float(row['anomaly_score']),
+                'risk_level': str(row['risk_level']),
+                'payment_status': int(row['payment_status'])
+            })
+        
+        total_anomalies = len(anomalies)
+        anomaly_rate = (total_anomalies / len(df)) * 100 if len(df) > 0 else 0
+        
+        return {
+            "success": True,
+            "model_type": "IsolationForest",
+            "period": {
+                "start_date": start_date,
+                "end_date": end_date
+            },
+            "total_transactions_analyzed": len(df),
+            "total_anomalies_detected": total_anomalies,
+            "anomaly_rate": round(anomaly_rate, 2),
+            "anomalies": anomaly_list
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.post("/api/ml/train")
+async def trigger_model_training(
+    days_back: int = Query(90, description="Days of historical data to use"),
+    admin_key: str = Query(..., description="Admin authentication key")
+):
+    """
+    Trigger ML model training (admin only)
+    
+    This will retrain all ML models with latest data
+    Requires admin authentication
+    """
+    # Simple authentication (in production, use proper auth)
+    if admin_key != "JALIKOI_ADMIN_2025":  # Change this!
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+    
+    if not ML_AVAILABLE:
+        raise HTTPException(status_code=503, detail="ML features not available")
+    
+    try:
+        # Import training function
+        from train_ml_models import train_all_models
+        
+        # Trigger training in background (in production, use Celery or similar)
+        import threading
+        
+        def train_in_background():
+            train_all_models()
+        
+        thread = threading.Thread(target=train_in_background)
+        thread.start()
+        
+        return {
+            "success": True,
+            "message": "Model training started in background",
+            "days_back": days_back,
+            "note": "Training may take 5-15 minutes depending on data size"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+# Update root endpoint to include ML endpoints
+@app.get("/")
+async def root():
+    """Root endpoint with API information"""
+    endpoints = {
+        "health": "/api/health",
+        "insights": "/api/insights",
+        "visualizations": "/api/visualizations",
+        "docs": "/docs"
+    }
+    
+    if ML_AVAILABLE:
+        endpoints.update({
+            "ml_model_info": "/api/ml/model-info",
+            "ml_churn_predictions": "/api/ml/churn-predictions",
+            "ml_revenue_forecast": "/api/ml/revenue-forecast",
+            "ml_segments": "/api/ml/segments",
+            "ml_anomalies": "/api/ml/anomalies"
+        })
+    
+    return {
+        "message": "Jalikoi Analytics API with ML",
+        "version": "2.0.0-ML",
+        "ml_enabled": ML_AVAILABLE,
+        "endpoints": endpoints
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    print("="*80)
+    print("JALIKOI ANALYTICS API - ML ENHANCED")
+    print("="*80)
+    print(f"\nML Features: {'✓ ENABLED' if ML_AVAILABLE else '✗ DISABLED'}")
+    print("\nStarting API server...")
+    print("Access API at: http://localhost:8000")
+    print("API Documentation: http://localhost:8000/docs")
+    
+    if ML_AVAILABLE and ml_engine:
+        model_info = ml_engine.get_model_info()
+        print("\nML Models Status:")
+        print(f"  • Churn Prediction: {'✓ Trained' if model_info['churn_model_trained'] else '✗ Not Trained'}")
+        print(f"  • Revenue Forecast: {'✓ Trained' if model_info['revenue_model_trained'] else '✗ Not Trained'}")
+        print(f"  • Segmentation: {'✓ Trained' if model_info['segmentation_model_trained'] else '✗ Not Trained'}")
+        print(f"  • Anomaly Detection: {'✓ Trained' if model_info['anomaly_model_trained'] else '✗ Not Trained'}")
+        
+        if not any([model_info['churn_model_trained'], model_info['revenue_model_trained']]):
+            print("\n⚠ No models trained yet. Run: python train_ml_models.py")
+    
+    print("="*80)
+    print()
+    
+    uvicorn.run("jalikoi_analytics_api_ml:app", host="0.0.0.0", port=8000, reload=True)
