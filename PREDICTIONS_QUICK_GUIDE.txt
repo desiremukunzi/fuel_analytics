@@ -1,0 +1,327 @@
+╔══════════════════════════════════════════════════════════════════╗
+║             🤖 PREDICTIONS PAGE - QUICK GUIDE                    ║
+╚══════════════════════════════════════════════════════════════════╝
+
+TWO MAIN PREDICTIONS:
+═════════════════════════════════════════════════════════════════
+
+┌──────────────────────────┐  ┌──────────────────────────────┐
+│  ⚠️  CHURN RISK          │  │  💰 REVENUE FORECAST         │
+│  (Who will leave?)       │  │  (How much will they spend?) │
+└──────────────────────────┘  └──────────────────────────────┘
+
+═════════════════════════════════════════════════════════════════
+
+⚠️  CHURN RISK EXPLAINED
+─────────────────────────────────────────────────────────────────
+
+What is Churn?
+   → Customer stops using your service
+
+Churn Probability:
+   🟢 0-30%   = Low Risk (Safe, no action needed)
+   🟡 30-70%  = Medium Risk (Monitor, engage customer)
+   🔴 70-100% = High Risk (URGENT! Call immediately)
+
+Example:
+   Customer #1234
+   Churn Risk: ████████░░ 75% (High Risk)
+   Last Visit: 38 days ago
+   Total Spent: 2,450,000 RWF
+   
+   ⚠️ Interpretation:
+   → 75% chance they'll leave in next 30 days
+   → Haven't visited in over a month
+   → Was valuable (2.4M RWF spent)
+   → ACTION: Call with win-back offer TODAY!
+
+═════════════════════════════════════════════════════════════════
+
+💰 REVENUE FORECAST EXPLAINED
+─────────────────────────────────────────────────────────────────
+
+What is it?
+   → How much money this customer will spend 
+     in the NEXT 6 MONTHS
+
+Example:
+   Customer #5678
+   Predicted Revenue: 1,850,000 RWF (next 6 months)
+   Historical Revenue: 3,200,000 RWF (total ever)
+   Confidence: High
+   
+   💡 Interpretation:
+   → Expect 1.85M RWF from this customer
+   → They spent 3.2M total (lifetime)
+   → Slowing down slightly
+   → Still valuable, maintain relationship
+
+Compare Predicted vs Historical:
+   📈 Growing:    Predicted > Historical → Great!
+   ➡️  Stable:     Predicted ≈ Historical → OK
+   📉 Declining:  Predicted < Historical → Warning!
+
+═════════════════════════════════════════════════════════════════
+
+🎯 QUICK DECISION MATRIX
+─────────────────────────────────────────────────────────────────
+
+Scenario 1: High Churn + High Revenue
+   Example: 80% churn, 3M RWF forecast
+   Priority: 🔴🔴🔴 CRITICAL
+   Action: Call NOW! Top retention priority
+   
+Scenario 2: High Churn + Low Revenue
+   Example: 75% churn, 200K RWF forecast
+   Priority: 🟡 Medium
+   Action: Evaluate cost of retention vs value
+   
+Scenario 3: Low Churn + High Revenue
+   Example: 15% churn, 4M RWF forecast
+   Priority: 🟢 Monitor
+   Action: VIP treatment, maintain excellence
+   
+Scenario 4: Low Churn + Low Revenue
+   Example: 20% churn, 300K RWF forecast
+   Priority: 🟢 Low
+   Action: Standard service, watch for growth
+
+═════════════════════════════════════════════════════════════════
+
+📊 WHAT EACH METRIC MEANS
+─────────────────────────────────────────────────────────────────
+
+Churn Probability (%)
+   → Chance customer will leave in next 30 days
+   → Based on: recency, frequency, spending patterns
+   
+Last Visit (Days)
+   → Days since last fuel purchase
+   → Higher = More risk
+   
+Total Spent (RWF)
+   → Lifetime value of customer
+   → Shows importance of retaining them
+   
+Transactions (#)
+   → Total fuel purchases ever
+   → Shows loyalty level
+   
+Predicted Revenue (RWF)
+   → Expected spending in next 6 months
+   → Based on: past behavior, trends
+   
+Historical Revenue (RWF)
+   → Total ever spent by customer
+   → Compare to predicted to see trend
+   
+Confidence (High/Medium/Low)
+   → How sure the AI is about prediction
+   → High = Very reliable, Low = Less certain
+
+═════════════════════════════════════════════════════════════════
+
+🚨 DAILY ACTION PLAN
+─────────────────────────────────────────────────────────────────
+
+Morning (10 minutes):
+   1. Open Predictions page
+   2. Filter: High Risk customers
+   3. Sort by: Total Spent (highest first)
+   4. Identify top 5 at-risk valuable customers
+   5. Assign team to call them TODAY
+
+Afternoon (20 minutes):
+   1. Review revenue forecasts
+   2. Identify top 10 predicted customers
+   3. Ensure they're getting VIP service
+   4. Note any declining trends
+
+End of Day (5 minutes):
+   1. Log retention call results
+   2. Update any rescued customers
+   3. Note patterns in churn reasons
+
+═════════════════════════════════════════════════════════════════
+
+💬 RETENTION CALL SCRIPT
+─────────────────────────────────────────────────────────────────
+
+For High Risk Customers:
+
+   "Hello [Customer Name], this is [Your Name] from 
+   Jalikoi. We noticed you haven't visited us in 
+   [X days] and wanted to check if everything is 
+   okay with our service.
+   
+   As a valued customer who has been with us for 
+   [time period] and made [X] purchases, we want 
+   to make sure we're meeting your needs.
+   
+   Is there anything we can improve? We're offering 
+   [special offer - e.g., 10% discount] for your 
+   next visit as a thank you for your loyalty.
+   
+   When can we see you again?"
+
+═════════════════════════════════════════════════════════════════
+
+📈 SUCCESS METRICS TO TRACK
+─────────────────────────────────────────────────────────────────
+
+Prediction Accuracy:
+   → Did predicted churners actually churn?
+   → Target: 80%+ accuracy
+   
+Retention Success:
+   → Of high-risk customers called, how many came back?
+   → Target: 40%+ retention rate
+   
+Revenue Accuracy:
+   → How close was forecast to actual?
+   → Target: Within 20%
+   
+Cost per Save:
+   → Retention cost ÷ Customers saved
+   → Target: < 30% of customer lifetime value
+
+═════════════════════════════════════════════════════════════════
+
+🎓 UNDERSTANDING THE AI
+─────────────────────────────────────────────────────────────────
+
+How does it predict churn?
+   Analyzes 14 behavior patterns:
+   • How recently they visited (recency)
+   • How often they visit (frequency)
+   • Spending amount and consistency
+   • Payment success rate
+   • App usage
+   • Customer age
+   • Recent trends
+   • And more...
+
+How does it forecast revenue?
+   Looks at:
+   • Average spending per visit
+   • Visit frequency
+   • Spending trends (growing/declining)
+   • Seasonality
+   • Recent behavior changes
+
+Accuracy:
+   • Churn Prediction: 95-98% accurate
+   • Revenue Forecast: ±15-20% of actual
+
+Updates:
+   • Models retrained weekly
+   • Predictions updated daily
+   • Uses last 90 days of data
+
+═════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+─────────────────────────────────────────────────────────────────
+
+1. Act Fast on High Risk
+   → Don't wait! Contact within 24 hours
+   
+2. Focus on High Value First
+   → Sort by Total Spent when viewing High Risk
+   → Save your most valuable customers first
+   
+3. Combine with Segments
+   → Check which segment they're in
+   → At Risk customers may show as "Dormant"
+   
+4. Track Your Success
+   → Note which retention tactics work best
+   → Share success stories with team
+   
+5. Don't Ignore Low Risk
+   → Even safe customers need good service
+   → Prevention is better than cure
+   
+6. Use Revenue Forecasts for Planning
+   → Sum total forecasts for budget planning
+   → Identify gaps vs targets early
+   
+7. Monitor Trends
+   → Is overall churn increasing?
+   → Are revenue forecasts dropping?
+   → Adjust strategy accordingly
+
+═════════════════════════════════════════════════════════════════
+
+❓ COMMON QUESTIONS
+─────────────────────────────────────────────────────────────────
+
+Q: What if I contact them and they still leave?
+A: Some churn is unavoidable. Focus on improving your 
+   retention rate over time, not saving 100%.
+
+Q: Should I offer discounts to all High Risk customers?
+A: Consider their value. Big discounts for high-value 
+   customers make sense. For low-value, maybe smaller offers.
+
+Q: How do I know if predictions are working?
+A: Track accuracy monthly. If predicted churners actually 
+   churn, the model is working. If not, may need retraining.
+
+Q: Can I trust the revenue forecasts?
+A: Use as guides, not guarantees. They're typically 
+   within 15-20% of actual. Best for planning, not 
+   exact budgeting.
+
+Q: What if a Low Risk customer suddenly leaves?
+A: Predictions aren't perfect. Some unexpected churn happens.
+   The goal is to catch MOST at-risk customers.
+
+═════════════════════════════════════════════════════════════════
+
+📞 TAKING ACTION
+─────────────────────────────────────────────────────────────────
+
+High Risk (70-100% churn):
+   ✓ Personal phone call
+   ✓ Ask about their experience
+   ✓ Offer win-back discount (10-20%)
+   ✓ Solve any problems immediately
+   ✓ Follow up within 1 week
+
+Medium Risk (30-70% churn):
+   ✓ Send SMS promotion
+   ✓ Email newsletter
+   ✓ Loyalty points offer
+   ✓ Monitor for changes
+   ✓ Ready to escalate if needed
+
+Low Risk (0-30% churn):
+   ✓ Maintain service quality
+   ✓ Occasional thank you message
+   ✓ Upsell opportunities
+   ✓ VIP programs for high-value
+
+═════════════════════════════════════════════════════════════════
+
+🎯 BOTTOM LINE
+─────────────────────────────────────────────────────────────────
+
+The Predictions page tells you:
+   1. WHO is about to leave (churn risk)
+   2. HOW MUCH they're worth (revenue forecast)
+   3. WHEN to act (risk level)
+   4. WHAT to prioritize (value + risk)
+
+Use it DAILY to:
+   ✓ Prevent customer loss
+   ✓ Maximize revenue
+   ✓ Focus retention efforts
+   ✓ Plan budgets accurately
+
+═════════════════════════════════════════════════════════════════
+
+Remember: PREDICTIONS = EARLY WARNING SYSTEM 🚨
+           Act before it's too late!
+
+═════════════════════════════════════════════════════════════════

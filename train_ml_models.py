@@ -33,20 +33,47 @@ def fetch_training_data(days_back: int = 90):
     print(f"Fetching {days_back} days of historical data...")
     
     end_date = datetime.now().date()
-    start_date = end_date - timedelta(days=days_back)
+    #start_date = end_date - timedelta(days=days_back)
+    start_date = '2025-08-01'  # Or your earliest data date
     
+    # query = f"""
+    #     SELECT 
+    #         id, station_id, motorcyclist_id, source, payer_phone,
+    #         fuel_type, liter, pump_price, amount, motari_code,
+    #         cashback_wallet_enabled, sp_txn_id, payment_status,
+    #         payment_method_id, created_at, updated_at
+    #     FROM DailyTransactionPayments
+    #     WHERE payment_status IN (200, 500)
+    #     AND DATE(created_at) >= '{start_date}'
+    #     AND DATE(created_at) <= '{end_date}'
+    #     ORDER BY created_at DESC
+    # """
+
     query = f"""
-        SELECT 
-            id, station_id, motorcyclist_id, source, payer_phone,
-            fuel_type, liter, pump_price, amount, motari_code,
-            cashback_wallet_enabled, sp_txn_id, payment_status,
-            payment_method_id, created_at, updated_at
-        FROM DailyTransactionPayments
-        WHERE payment_status IN (200, 500)
-        AND DATE(created_at) >= '{start_date}'
-        AND DATE(created_at) <= '{end_date}'
-        ORDER BY created_at DESC
-    """
+        SELECT  
+    d.id,
+    d.station_id,
+    d.motorcyclist_id,
+    d.source,
+    d.payer_phone,
+    d.fuel_type,
+    d.liter,
+    d.pump_price,
+    d.amount,
+    d.motari_code,
+    d.cashback_wallet_enabled,
+    d.sp_txn_id,
+    d.payment_status,
+    d.payment_method_id,
+    d.created_at,
+    d.updated_at
+FROM DailyTransactionPayments d
+JOIN motorcyclists m ON d.motorcyclist_id = m.id
+WHERE d.payment_status=200
+AND DATE(m.created_at) BETWEEN '{start_date}' AND '{end_date}'
+ORDER BY d.created_at DESC;
+ """
+
     
     try:
         with JalikoiDatabaseConnector(DB_CONFIG) as db:

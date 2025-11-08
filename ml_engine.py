@@ -374,6 +374,61 @@ class MLEngine:
         
         return results
     
+
+    def _identify_new_with_potential(self, results: pd.DataFrame, customer_metrics: pd.DataFrame) -> pd.DataFrame:
+        """
+        Identify new customers with high potential
+        Overrides ML clustering for customers who are both new AND showing potential
+        
+        Criteria:
+        - New: customer_age_days < 90
+        - Potential: frequency > 0.5 OR total_spent > 100000 OR transaction_count > 5
+        - Active: recency_days < 30
+        """
+        # Merge with customer metrics to get the features
+        merged = results.merge(
+            customer_metrics[[
+                'motorcyclist_id', 
+                'customer_age_days', 
+                'frequency', 
+                'total_spent', 
+                'transaction_count',
+                'recency_days'
+            ]], 
+            on='motorcyclist_id',
+            how='left'
+        )
+        
+        # Define "New" - joined in last 90 days
+        is_new = merged['customer_age_days'] < 90
+        
+        # Define "Potential" - showing high-value behavior
+        has_potential = (
+            (merged['frequency'] > 0.5) |  # Frequent transactions
+            (merged['total_spent'] > 100000) |  # Good spender
+            (merged['transaction_count'] > 5)  # Multiple transactions
+        )
+        
+        # Must also be active recently
+        is_active = merged['recency_days'] < 30
+        
+        # Combine criteria
+        new_with_potential = is_new & has_potential & is_active
+        
+        # Override segment name for these customers
+        merged.loc[new_with_potential, 'segment_name'] = 'New Customers'
+        
+        # For old "New Customers" who don't meet criteria, reclassify
+        old_fake_new = (merged['segment_name'] == 'New Customers') & ~new_with_potential
+        
+        # Reclassify based on their actual behavior
+        # Old + low activity = Dormant/Occasional
+        merged.loc[old_fake_new & (merged['customer_age_days'] >= 90), 'segment_name'] = 'Occasional Users'
+        
+        print(f"   ✓ Identified {new_with_potential.sum()} New Customers with Potential")
+        
+        return merged[results.columns]
+
     def predict_segments(self, customer_metrics: pd.DataFrame) -> pd.DataFrame:
         """Predict customer segments
         
@@ -397,16 +452,25 @@ class MLEngine:
         results = customer_metrics[['motorcyclist_id']].copy()
         results['ml_segment'] = segments
         results['segment_name'] = results['ml_segment'].map({
-            0: 'Premium VIPs',
-            1: 'Loyal Regulars',
-            2: 'Growth Potential',
+            0: 'Lost',
+            1: 'Dormant',
+            2: 'Premium VIPs',
             3: 'At Risk',
             4: 'Occasional Users',
-            5: 'New Customers',
-            6: 'Dormant',
-            7: 'Lost'
+            5: 'Loyal Regulars',
+            6: 'Growth Potential',
+            7: 'New Customers'           
+            # 0: 'VIP Customers',
+            # 1: 'Frequent Buyers',
+            # 2: 'New Customers',
+            # 3: 'Dormant',
+            # 4: 'Regular Customers'
         })
         
+        # Post-process: Identify "New Customers with Potential"
+        # Rule-based overlay on ML segments
+        results = self._identify_new_with_potential(results, customer_metrics)
+
         return results
     
     def train_anomaly_detector(self, transaction_features: pd.DataFrame) -> Dict[str, Any]:

@@ -238,7 +238,7 @@ su - jalikoi
 **On your Windows machine:**
 ```bash
 # If you don't have SSH key:
-ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+ssh-keygen -t rsa -b 4096 -C "desiremukunzi@gmail.com"
 ```
 
 **Copy key to server:**
@@ -412,23 +412,23 @@ curl http://localhost:8000/api/health
 
 ### Step 5.6: Setup Systemd Service (Run API as Service)
 
-**Create service file:**
+**Create service file:** --LEFT HERE
 ```bash
-sudo nano /etc/systemd/system/jalikoi-api.service
+sudo nano /etc/systemd/system/fuel_analytics_backend.service
 ```
 
 **Add this content:**
 ```ini
 [Unit]
-Description=Jalikoi Analytics API
+Description=Fuel Analytics Backend
 After=network.target
 
 [Service]
 Type=simple
-User=jalikoi
-WorkingDirectory=/home/jalikoi/projects/jalikoi-analytics
-Environment="PATH=/home/jalikoi/projects/jalikoi-analytics/venv/bin"
-ExecStart=/home/jalikoi/projects/jalikoi-analytics/venv/bin/python jalikoi_analytics_api_ml.py
+User=root
+WorkingDirectory=/var/www/fuel_analytics_backend
+Environment="PATH=/var/www/fuel_analytics_backend/venv/bin"
+ExecStart=/var/www/fuel_analytics_backend/venv/bin/python jalikoi_analytics_api_ml.py
 Restart=always
 RestartSec=10
 
@@ -479,7 +479,7 @@ server {
 
 **Enable site:**
 ```bash
-sudo ln -s /etc/nginx/sites-available/jalikoi-api /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/fuel_analytics_backend /etc/nginx/sites-enabled/
 
 # Test config
 sudo nginx -t
@@ -540,10 +540,10 @@ npm run build
 ```bash
 # Copy build to web directory
 sudo mkdir -p /var/www/jalikoi
-sudo cp -r build/* /var/www/jalikoi/
+sudo cp -r build/* /var/www/fuel_analytics_frontend/
 
 # Set permissions
-sudo chown -R www-data:www-data /var/www/jalikoi
+sudo chown -R www-data:www-data /var/www/fuel_analytics_frontend
 ```
 
 ### Step 6.5: Configure Nginx for Frontend
@@ -556,9 +556,9 @@ sudo nano /etc/nginx/sites-available/jalikoi-frontend
 ```nginx
 server {
     listen 80;
-    server_name yourdomain.com www.yourdomain.com;  # Change this!
+    server_name analytics.jalikoi.rw;  
 
-    root /var/www/jalikoi;
+    root /var/www/fuel_analytics_frontend;
     index index.html;
 
     location / {
@@ -575,7 +575,7 @@ server {
 
 **Enable:**
 ```bash
-sudo ln -s /etc/nginx/sites-available/jalikoi-frontend /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/fuel_analytics_frontend /etc/nginx/sites-enabled/
 
 sudo nginx -t
 sudo systemctl reload nginx
@@ -656,7 +656,7 @@ cd ~/projects/frontend
 git pull
 npm install
 npm run build
-sudo cp -r build/* /var/www/jalikoi/
+sudo cp -r build/* /var/www/fuel_analytics_frontend/
 ```
 
 ### Step 8.3: Backup ML Models
@@ -686,7 +686,7 @@ mkdir -p ~/backups
 crontab -e
 
 # Add this line:
-0 2 * * * /home/jalikoi/backup_models.sh
+0 2 * * * ~/backup_models.sh
 ```
 
 ### Step 8.4: Setup Firewall
@@ -820,7 +820,7 @@ sudo systemctl restart jalikoi-api
 
 # Rebuild frontend
 cd ~/projects/frontend && git pull && npm run build
-sudo cp -r build/* /var/www/jalikoi/
+sudo cp -r build/* /var/www/fuel_analytics_frontend/
 
 # Check disk space
 df -h
