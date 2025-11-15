@@ -1,0 +1,74 @@
+# 🎯 QUICK START - Groq Chatbot
+
+## ⚡ 3 Steps to Start
+
+### 1. Install (1 min)
+```bash
+pip install groq python-dotenv
+```
+
+### 2. Get Key (2 min)
+- Go to: https://console.groq.com
+- Sign up (free!)
+- Create API key
+- Copy it
+
+### 3. Setup (1 min)
+- Open: `.env`
+- Replace: `your_groq_api_key_here`
+- With: `gsk_your_actual_key`
+- Save file
+
+### 4. Run!
+```bash
+python chatbot_groq_free.py
+```
+
+---
+
+## 📋 Checklist
+
+- [ ] Installed `pip install groq python-dotenv`
+- [ ] Got API key from https://console.groq.com
+- [ ] Updated `.env` file with key
+- [ ] Ran `python chatbot_groq_free.py`
+- [ ] Tested with a query
+
+---
+
+## 💬 Test Query
+
+```
+What's our total revenue?
+```
+
+---
+
+## ❓ Problems?
+
+**"Module not found"**
+```bash
+pip install groq python-dotenv
+```
+
+**"API key not set"**
+- Check `.env` file has your key
+- Should start with `gsk_`
+- No quotes or spaces
+
+**Still stuck?**
+- Read: `SETUP_GUIDE_ENV.md`
+
+---
+
+## 📁 Files
+
+- `.env` - Your API key here
+- `.env.example` - Template
+- `chatbot_groq_free.py` - Main script
+- `SETUP_GUIDE_ENV.md` - Full guide
+- This file - Quick reference
+
+---
+
+**Get API key: https://console.groq.com** 🚀

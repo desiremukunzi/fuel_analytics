@@ -15,23 +15,12 @@ import os
 import json
 from datetime import datetime, timedelta
 
-# Load environment variables FIRST
+# Load environment variables
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
-
-from groq import Groq
-
-# Initialize Groq client AFTER loading env vars
-groq_api_key = os.getenv("GROQ_API_KEY")
-if groq_api_key:
-    groq_client = Groq(api_key=groq_api_key)
-    print("✓ Groq chatbot initialized")
-else:
-    groq_client = None
-    print("⚠ GROQ_API_KEY not found in environment")
 
 # Add imports for ML
 try:
@@ -41,8 +30,13 @@ except ImportError:
     ML_AVAILABLE = False
     print("⚠ ML Engine not available. Install scikit-learn to enable ML features.")
 
-# Check if Groq is available
-GROQ_AVAILABLE = groq_client is not None
+# Import Groq
+try:
+    from groq import Groq
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+    print("⚠ Groq not available. Install with: pip install groq")
 
 # Import working metrics calculator
 from train_ml_models import calculate_customer_metrics as calc_customer_metrics
@@ -78,239 +72,284 @@ class GroqChatbot:
         self.engine = engine  # Use the analytics engine from imported API
         self.conversation_history = {}
     
-    def get_database_stats(self, start_date: str = None, end_date: str = None) -> str:
+    def get_database_stats(self, start_date: str = None, end_date: str = None) -> dict:
         """Fetch current database statistics"""
         if not end_date:
             end_date = str(datetime.now().date())
         if not start_date:
             start_date = str(datetime.now().date() - timedelta(days=30))
         
-        try:
-            df = self.engine.fetch_data_from_db(start_date, end_date)
-            
-            if df is None or df.empty:
-                return json.dumps({'error': 'No data available'})
-            
-            df = self.engine.preprocess_data(df)
-            
-            result = {
-                'total_revenue': float(df['amount'].sum()),
-                'total_transactions': len(df),
-                'total_customers': int(df['motorcyclist_id'].nunique()),
-                'total_liters': float(df['liter'].sum()),
-                'avg_transaction': float(df['amount'].mean()),
-                'active_stations': int(df['station_id'].nunique()),
-                'date_range': {'start': start_date, 'end': end_date}
-            }
-            
-            return json.dumps(result)
-        except Exception as e:
-            return json.dumps({'error': str(e)})
+        df = self.engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            return {'error': 'No data available'}
+        
+        df = self.engine.preprocess_data(df)
+        
+        return {
+            'total_revenue': float(df['amount'].sum()),
+            'total_transactions': len(df),
+            'total_customers': int(df['motorcyclist_id'].nunique()),
+            'total_liters': float(df['liter'].sum()),
+            'avg_transaction': float(df['amount'].mean()),
+            'active_stations': int(df['station_id'].nunique()),
+            'date_range': {'start': start_date, 'end': end_date}
+        }
     
-    def get_top_customers(self, start_date: str = None, end_date: str = None, n: int = 5) -> str:
+    def get_top_customers(self, start_date: str = None, end_date: str = None, n: int = 5) -> dict:
         """Get top N customers by revenue"""
         if not end_date:
             end_date = str(datetime.now().date())
         if not start_date:
             start_date = str(datetime.now().date() - timedelta(days=30))
         
-        try:
-            df = self.engine.fetch_data_from_db(start_date, end_date)
-            
-            if df is None or df.empty:
-                return json.dumps({'error': 'No data available'})
-            
-            df = self.engine.preprocess_data(df)
-            top_customers = df.groupby('motorcyclist_id')['amount'].sum().nlargest(n)
-            
-            result = {
-                'top_customers': [
-                    {'customer_id': int(cid), 'revenue': float(amount), 'rank': i + 1}
-                    for i, (cid, amount) in enumerate(top_customers.items())
-                ],
-                'period': f"{start_date} to {end_date}"
-            }
-            
-            return json.dumps(result)
-        except Exception as e:
-            return json.dumps({'error': str(e)})
+        df = self.engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            return {'error': 'No data available'}
+        
+        df = self.engine.preprocess_data(df)
+        top_customers = df.groupby('motorcyclist_id')['amount'].sum().nlargest(n)
+        
+        return {
+            'top_customers': [
+                {'customer_id': int(cid), 'revenue': float(amount), 'rank': i + 1}
+                for i, (cid, amount) in enumerate(top_customers.items())
+            ]
+        }
     
-    def get_station_performance(self, start_date: str = None, end_date: str = None) -> str:
+    def get_station_performance(self, start_date: str = None, end_date: str = None) -> dict:
         """Get station performance metrics"""
         if not end_date:
             end_date = str(datetime.now().date())
         if not start_date:
             start_date = str(datetime.now().date() - timedelta(days=30))
         
-        try:
-            df = self.engine.fetch_data_from_db(start_date, end_date)
-            
-            if df is None or df.empty:
-                return json.dumps({'error': 'No data available'})
-            
-            df = self.engine.preprocess_data(df)
-            station_stats = df.groupby('station_id').agg({
-                'amount': ['sum', 'mean', 'count'],
-                'liter': 'sum'
-            }).reset_index()
-            
-            station_stats.columns = ['station_id', 'total_revenue', 'avg_transaction', 'transaction_count', 'total_liters']
-            station_stats = station_stats.sort_values('total_revenue', ascending=False)
-            
-            result = {
-                'stations': [
-                    {
-                        'station_id': int(row['station_id']),
-                        'revenue': float(row['total_revenue']),
-                        'transactions': int(row['transaction_count']),
-                        'avg_transaction': float(row['avg_transaction']),
-                        'total_liters': float(row['total_liters'])
-                    }
-                    for _, row in station_stats.head(10).iterrows()
-                ],
-                'period': f"{start_date} to {end_date}"
-            }
-            
-            return json.dumps(result)
-        except Exception as e:
-            return json.dumps({'error': str(e)})
+        df = self.engine.fetch_data_from_db(start_date, end_date)
+        
+        if df is None or df.empty:
+            return {'error': 'No data available'}
+        
+        df = self.engine.preprocess_data(df)
+        station_stats = df.groupby('station_id').agg({
+            'amount': ['sum', 'mean', 'count'],
+            'liter': 'sum'
+        }).reset_index()
+        
+        station_stats.columns = ['station_id', 'total_revenue', 'avg_transaction', 'transaction_count', 'total_liters']
+        station_stats = station_stats.sort_values('total_revenue', ascending=False)
+        
+        return {
+            'stations': [
+                {
+                    'station_id': int(row['station_id']),
+                    'revenue': float(row['total_revenue']),
+                    'transactions': int(row['transaction_count']),
+                    'avg_transaction': float(row['avg_transaction']),
+                    'total_liters': float(row['total_liters'])
+                }
+                for _, row in station_stats.head(10).iterrows()
+            ]
+        }
     
-    def get_revenue_trend(self, days: int = 30) -> str:
+    def get_revenue_trend(self, days: int = 30) -> dict:
         """Get revenue trend over time"""
-        try:
-            end_date = datetime.now().date()
-            start_date = end_date - timedelta(days=days)
-            
-            df = self.engine.fetch_data_from_db(str(start_date), str(end_date))
-            
-            if df is None or df.empty:
-                return json.dumps({'error': 'No data available'})
-            
-            df = self.engine.preprocess_data(df)
-            daily_revenue = df.groupby(df['created_at'].dt.date)['amount'].sum().reset_index()
-            daily_revenue.columns = ['date', 'revenue']
-            
-            result = {
-                'trend': [
-                    {'date': str(row['date']), 'revenue': float(row['revenue'])}
-                    for _, row in daily_revenue.iterrows()
-                ],
-                'period': f"{start_date} to {end_date}"
-            }
-            
-            return json.dumps(result)
-        except Exception as e:
-            return json.dumps({'error': str(e)})
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=days)
+        
+        df = self.engine.fetch_data_from_db(str(start_date), str(end_date))
+        
+        if df is None or df.empty:
+            return {'error': 'No data available'}
+        
+        df = self.engine.preprocess_data(df)
+        daily_revenue = df.groupby(df['created_at'].dt.date)['amount'].sum().reset_index()
+        daily_revenue.columns = ['date', 'revenue']
+        
+        return {
+            'trend': [
+                {'date': str(row['date']), 'revenue': float(row['revenue'])}
+                for _, row in daily_revenue.iterrows()
+            ]
+        }
     
     def chat(self, user_message: str, user_id: str = "default") -> str:
-        """Process user message and return AI response - SIMPLIFIED (NO FUNCTION CALLING)"""
+        """Process user message and return AI response"""
         
         # Initialize conversation history for user
         if user_id not in self.conversation_history:
             self.conversation_history[user_id] = []
         
-        # Detect what the user is asking for
-        message_lower = user_message.lower()
-        
-        # Determine dates
-        today = datetime.now().date()
-        yesterday = today - timedelta(days=1)
-        week_ago = today - timedelta(days=7)
-        
-        start_date = str(yesterday)
-        end_date = str(yesterday)
-        
-        if "today" in message_lower:
-            start_date = str(today)
-            end_date = str(today)
-        elif "yesterday" in message_lower:
-            start_date = str(yesterday)
-            end_date = str(yesterday)
-        elif "last week" in message_lower or "past week" in message_lower:
-            start_date = str(week_ago)
-            end_date = str(yesterday)
-        elif "this week" in message_lower:
-            # Get Monday of current week
-            days_since_monday = today.weekday()
-            monday = today - timedelta(days=days_since_monday)
-            start_date = str(monday)
-            end_date = str(today)
-        
-        # Pattern matching for different queries
-        context_data = None
-        
-        try:
-            # Top customers / best customer
-            if any(word in message_lower for word in ['best customer', 'top customer', 'highest spending', 'who spent most']):
-                n = 1 if 'best' in message_lower or 'top customer' in message_lower else 5
-                data = self.get_top_customers(start_date, end_date, n)
-                context_data = f"Customer data: {data}"
-            
-            # Revenue queries
-            elif any(word in message_lower for word in ['revenue', 'sales', 'income', 'earning', 'made', 'profit']):
-                data = self.get_database_stats(start_date, end_date)
-                context_data = f"Revenue data: {data}"
-            
-            # Customer count
-            elif any(word in message_lower for word in ['how many customers', 'customer count', 'number of customers']):
-                data = self.get_database_stats(start_date, end_date)
-                context_data = f"Customer data: {data}"
-            
-            # Station performance
-            elif any(word in message_lower for word in ['station', 'location', 'branch']):
-                data = self.get_station_performance(start_date, end_date)
-                context_data = f"Station data: {data}"
-            
-            # Trend
-            elif any(word in message_lower for word in ['trend', 'over time', 'daily']):
-                days = 7 if 'week' in message_lower else 30
-                data = self.get_revenue_trend(days)
-                context_data = f"Trend data: {data}"
-            
-            # General stats
-            else:
-                data = self.get_database_stats(start_date, end_date)
-                context_data = f"General stats: {data}"
-        
-        except Exception as e:
-            context_data = f"Error fetching data: {str(e)}"
-        
-        # Build prompt with context
-        system_prompt = f"""You are an AI assistant for Jalikoi Analytics, a fuel station analytics platform in Rwanda.
+        # Update system prompt with current date
+        current_system_prompt = f"""
+You are an AI assistant for Jalikoi Analytics, a fuel station analytics platform in Rwanda.
 
-Today's date: {today}
-Yesterday: {yesterday}
+Today's date is: {datetime.now().strftime('%Y-%m-%d')}
+Yesterday's date was: {(datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')}
 
-All monetary amounts are in RWF (Rwandan Francs). Always format numbers with commas for readability.
+You help users understand their business data by answering questions about:
+- Revenue and sales (always display amounts in RWF - Rwandan Francs)
+- Customer statistics
+- Station performance
+- Transaction trends
+- Business insights
 
-Based on the data provided below, give a clear, concise answer to the user's question.
-Be conversational and helpful. If data shows an error, apologize and suggest checking the dashboard.
+IMPORTANT: All monetary amounts are in RWF (Rwandan Francs), not dollars.
+When displaying amounts, always use "RWF" or "Rwandan Francs", never use "$" or "dollars".
 
-Extract the specific information requested from the data and present it naturally."""
+Format large numbers with commas for readability (e.g., 15,234,567 RWF).
 
-        # Add to conversation history
-        self.conversation_history[user_id].append({"role": "user", "content": user_message})
+When interpreting dates:
+- "today" = {datetime.now().strftime('%Y-%m-%d')}
+- "yesterday" = {(datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')}
+- "last week" = last 7 days ending today
+- "this week" = from Monday to today
+- "this month" = from 1st of current month to today
+- "last month" = the previous calendar month
+- "last 30 days" = 30 days before today
+
+Always use the correct dates based on today's date shown above.
+
+When users ask questions, call the appropriate function to get real data.
+Be conversational, helpful, and provide actionable insights.
+Keep responses concise but informative.
+"""
         
-        # Build messages
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Question: {user_message}\n\nData: {context_data}\n\nProvide a helpful answer based on this data."}
+        # Define tools
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_database_stats",
+                    "description": "Get overall statistics including revenue (in RWF), transactions, customers for a date range. Defaults to last 30 days if dates not provided. All amounts are in Rwandan Francs (RWF).",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "start_date": {"type": "string", "description": "Start date in YYYY-MM-DD format. Optional, defaults to 30 days ago."},
+                            "end_date": {"type": "string", "description": "End date in YYYY-MM-DD format. Optional, defaults to today."}
+                        }
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_top_customers",
+                    "description": "Get top customers ranked by revenue in RWF (Rwandan Francs). Defaults to last 30 days.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "start_date": {"type": "string", "description": "Start date in YYYY-MM-DD format. Optional."},
+                            "end_date": {"type": "string", "description": "End date in YYYY-MM-DD format. Optional."},
+                            "n": {"type": "integer", "description": "Number of top customers to return", "default": 5}
+                        }
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_station_performance",
+                    "description": "Get performance metrics for all stations including revenue in RWF. Defaults to last 30 days.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "start_date": {"type": "string", "description": "Start date in YYYY-MM-DD format. Optional."},
+                            "end_date": {"type": "string", "description": "End date in YYYY-MM-DD format. Optional."}
+                        }
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_revenue_trend",
+                    "description": "Get daily revenue trend in RWF (Rwandan Francs) over time. Defaults to last 30 days.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "days": {"type": "integer", "description": "Number of days to analyze", "default": 30}
+                        }
+                    }
+                }
+            }
         ]
         
-        # Call Groq WITHOUT function calling (more reliable)
+        # Add user message to history
+        self.conversation_history[user_id].append({"role": "user", "content": user_message})
+        
+        # Call Groq API
+        messages = [
+            {"role": "system", "content": current_system_prompt},
+            *self.conversation_history[user_id]
+        ]
+        
         response = self.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.7,
-            max_tokens=500
+            tools=tools,
+            tool_choice="auto",
+            max_tokens=1024
         )
         
-        assistant_message = response.choices[0].message.content
+        response_message = response.choices[0].message
+        tool_calls = response_message.tool_calls
+        
+        # Process tool calls
+        if tool_calls:
+            self.conversation_history[user_id].append(response_message)
+            
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                
+                # Call the function
+                if function_name == "get_database_stats":
+                    result = self.get_database_stats(
+                        start_date=function_args.get('start_date'),
+                        end_date=function_args.get('end_date')
+                    )
+                elif function_name == "get_top_customers":
+                    result = self.get_top_customers(
+                        start_date=function_args.get('start_date'),
+                        end_date=function_args.get('end_date'),
+                        n=function_args.get('n', 5)
+                    )
+                elif function_name == "get_station_performance":
+                    result = self.get_station_performance(
+                        start_date=function_args.get('start_date'),
+                        end_date=function_args.get('end_date')
+                    )
+                elif function_name == "get_revenue_trend":
+                    result = self.get_revenue_trend(days=function_args.get('days', 30))
+                else:
+                    result = {"error": "Unknown function"}
+                
+                # Add function result
+                self.conversation_history[user_id].append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": json.dumps(result)
+                })
+            
+            # Get final response
+            second_response = self.client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": current_system_prompt},
+                    *self.conversation_history[user_id]
+                ]
+            )
+            
+            final_message = second_response.choices[0].message.content
+        else:
+            final_message = response_message.content
         
         # Add to history
-        self.conversation_history[user_id].append({"role": "assistant", "content": assistant_message})
+        self.conversation_history[user_id].append({"role": "assistant", "content": final_message})
         
-        return assistant_message
+        return final_message
 
 
 # Initialize Groq Chatbot
@@ -332,41 +371,43 @@ if GROQ_AVAILABLE:
 # ============================================================================
 
 @app.post("/api/chatbot")
-async def chatbot_endpoint(request: dict):
-    """AI-powered chatbot with database access"""
+async def chatbot_query(chat_message: ChatMessage):
+    """
+    Groq AI-powered chatbot for analytics queries
+    
+    Example queries:
+    - "What's our total revenue?"
+    - "Who were the top customers yesterday?"
+    - "Show me station performance"
+    - "Revenue trend for last week"
+    """
+    if not GROQ_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Groq chatbot not available. Install with: pip install groq"
+        )
+    
     if not groq_chatbot:
-        raise HTTPException(status_code=503, detail="Chatbot not available")
+        raise HTTPException(
+            status_code=503,
+            detail="Groq chatbot not initialized. Set GROQ_API_KEY environment variable."
+        )
     
     try:
-        message = request.get('message', '')
-        user_id = request.get('user_id', 'default')
-        
-        if not message:
-            raise HTTPException(status_code=400, detail="Message is required")
-        
-        print(f"📩 Chatbot received: {message}")
-        
-        # Use the GroqChatbot class that has database access
-        response_text = groq_chatbot.chat(message, user_id)
-        
-        print(f"✅ Response: {response_text[:100]}...")
+        response = groq_chatbot.chat(
+            chat_message.message,
+            chat_message.user_id or "default"
+        )
         
         return {
             "success": True,
-            "response": response_text,
-            "query": message
+            "message": response,
+            "data": {}
         }
-        
+    
     except Exception as e:
-        print(f"❌ Chatbot error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        return {
-            "success": False,
-            "response": "I'm having trouble processing your request. Please try rephrasing or check the dashboard.",
-            "error": str(e)
-        }
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 
 @app.get("/api/chatbot/history/{user_id}")
 async def get_chat_history(user_id: str, limit: int = Query(20)):
@@ -847,53 +888,6 @@ async def trigger_model_training(
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
-
-
-# ============================================================================
-# LOGIN ENDPOINT
-# ============================================================================
-
-@app.post("/api/login")
-async def login(credentials: dict):
-    """
-    Login endpoint - validates credentials from .env
-    """
-    import secrets
-    
-    ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
-    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
-    
-    username = credentials.get('username', '')
-    password = credentials.get('password', '')
-    
-    # Constant-time comparison to prevent timing attacks
-    correct_username = secrets.compare_digest(
-        username.encode('utf-8'),
-        ADMIN_USERNAME.encode('utf-8')
-    )
-    correct_password = secrets.compare_digest(
-        password.encode('utf-8'),
-        ADMIN_PASSWORD.encode('utf-8')
-    )
-    
-    if not (correct_username and correct_password):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    
-    # Generate token
-    token = secrets.token_urlsafe(32)
-    
-    return {
-        "success": True,
-        "message": "Login successful",
-        "token": token,
-        "user": {
-            "username": username,
-            "role": "admin",
-            "login_time": datetime.now().isoformat()
-        }
-    }
-
-
 # Update root endpoint
 @app.get("/")
 async def root():
@@ -957,4 +951,4 @@ if __name__ == "__main__":
     print("="*80)
     print()
     
-    uvicorn.run("jalikoi_analytics_api_ml:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("jalikoi_analytics_api_ml_fixed:app", host="0.0.0.0", port=8000, reload=True)

@@ -101,7 +101,7 @@ class AnalyticsEngine:
                 cashback_wallet_enabled, sp_txn_id, payment_status,
                 payment_method_id, created_at, updated_at
             FROM DailyTransactionPayments
-            WHERE payment_status IN (200, 500)
+            WHERE payment_status = 200
         """
         
         if start_date:

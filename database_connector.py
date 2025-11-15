@@ -281,7 +281,7 @@ def load_payments_from_database(config, query=None, table_name='payments'):
                 created_at,
                 updated_at
             FROM {table_name}
-            WHERE payment_status IN (200, 500)
+            WHERE payment_status = 200
             ORDER BY created_at DESC
         """
     
